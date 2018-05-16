@@ -1,0 +1,100 @@
+---
+title: "Statistical Leraning/ Lab 4"
+author: "Sascha Strobl"
+date: "5/16/2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Support Vector Machine classification, hierarchical clustering and image recoginition
+
+Load dataset and remove two columns:
+
+```{r}
+setwd("~/Documents/CGUClasses/ZOLDClasses/Statistical Learning/Lab4");
+GH = read.table("glendalehousing.txt", header = T);
+drops <- c("Address","LotArea.1")
+GH1=GH[ , !(names(GH) %in% drops)]
+```
+
+Get dimensions of dataset:
+
+```{r}
+dim(GH1)
+```
+
+Run Support Vector Machine classification with three different kernels (linear, polynomial, radial):
+
+```{r}
+keeps <- c("Transfervalue", "BuildingArea", "Pool")
+GH2=GH1[keeps]
+train=GH2[1:150,]
+test=GH2[151:173,]
+train$Pool[train$Pool == 0] <- -1
+test$Pool[test$Pool == 0] <- -1
+train$Pool=as.factor(train$Pool);
+test$Pool=as.factor(test$Pool);
+plot(x=train$Transfervalue, y=train$BuildingArea, col=factor(train$Pool));
+library(e1071);
+#Linear
+set.seed (1);
+tune.out=tune(svm,Pool~.,data=train,kernel="linear",ranges=list(cost=c(0.001,0.01,0.1,1,5,10,100)));
+summary (tune.out);
+bestmod =tune.out$best.model;
+summary(bestmod);
+ypred=predict (bestmod ,test);
+table(predict =ypred , truth= test$Pool);
+plot(bestmod,train)
+#Polynomial
+set.seed (1);
+tune.out=tune(svm,Pool~.,data=train,kernel="polynomial",ranges=list(cost=c(0.001,0.01,0.1,1,5,10,100)));
+summary (tune.out);
+bestmod =tune.out$best.model;
+summary(bestmod);
+ypred=predict (bestmod ,test);
+table(predict =ypred , truth= test$Pool);
+plot(bestmod,train)
+#Radial
+set.seed (1);
+tune.out=tune(svm,Pool~.,data=train,kernel="radial",ranges
+              =list(cost=c(0.001,0.01,0.1,1,5,10,100)));
+summary (tune.out);
+bestmod =tune.out$best.model;
+summary(bestmod);
+ypred=predict (bestmod ,test);
+table(predict =ypred , truth= test$Pool);
+plot(bestmod,train)
+```
+
+Hierachical Clustering on the USArrests dataset:
+
+```{r}
+data(USArrests);
+clusters <- hclust(dist(USArrests))
+plot(clusters)
+x=USArrests;
+hc.complete=hclust(dist(x),method ="complete");
+hc.average=hclust(dist(x),method ="average");
+hc.single=hclust(dist(x),method ="single");
+par(mfrow =c(1,3));
+plot(hc.complete,main="Complete;Linkage",xlab="",sub="",cex=.9);
+plot(hc.average,main ="Average Linkage",xlab="",sub="",cex=.9);
+plot(hc.single,main ="Single Linkage",xlab="",sub="",cex=.9);
+cutree(hc.complete,2);
+xsc=scale (x);
+```
+
+Image recognition: load image, apply k-means clustering and output image
+
+```{r}
+library(ripa);
+library(jpeg);
+img =readJPEG("nba.jpg");
+plot(imagematrix(img));
+dim(img);
+ID=kmeans(img,4);
+C=matrix(ID$cluster,1748,2047,3);
+C=t(C);
+plot(imagematrix(C/4));
+```
